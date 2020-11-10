@@ -1,6 +1,5 @@
 import { db } from '../db';
 import { Router } from 'express';
-import { ResultSetHeader } from 'mysql2';
 
 interface Task {
     id: Number;
@@ -26,13 +25,13 @@ export class Tasks {
     setRoutes() {
         // Retrieve tasks
         this.router.get('/', (req, res) => {
-            this.getTasks(<string>req.query?.filters)
+            this.getTasks(<string>req.query?.filter)
                 .then(([rows]) => res.send(rows));
         });
 
         // Create new task
         this.router.post('/', (req, res) => {
-            //Validate Input
+            //TODO: Validate Input
             const formData: TaskInput = {
                 title: req.body.title,
                 description: req.body.description,
@@ -40,30 +39,43 @@ export class Tasks {
 
             this.storeTask(formData)
                 .then(() => {
-                    res.sendStatus(200);
-                });
+                    res.status(200)
+                        .json({status: 'OK'});
+                });;
         });
 
         // Update task information
         this.router.put('/:taskId', (req, res) => {
-            //Validate Input
+            //TODO: Validate Input
             const task: Task = {
                 id: parseInt(req.params.taskId),
                 title: req.body.title,
                 description: req.body.description
             };
 
-            this.updateTask(task).then(() => res.sendStatus(200));
+            this.updateTask(task)
+                .then(() => { 
+                    res.status(200)
+                        .json({status: 'OK'});
+                });;
         });
 
         // Toggle completed_at field
-        this.router.put('/toggle/:taskId', (req, res) => {
-            this.updateTaskStatus(parseInt(req.params.taskId)).then(() => res.sendStatus(200));
-        })
+        this.router.post('/toggle', (req, res) => {
+            this.updateTaskStatus(parseInt(req.body.id))
+                .then(() => { 
+                    res.status(200)
+                        .json({status: 'OK'});
+                });
+        });
 
         // Delete task
         this.router.delete('/:taskId', (req, res) => {
-            this.destroyTask(parseInt(req.params.taskId)).then(() => res.sendStatus(200));
+            this.destroyTask(parseInt(req.params.taskId))
+                .then(() => { 
+                    res.status(200)
+                        .json({status: 'OK'});
+                });
         });
     }
 
@@ -72,7 +84,15 @@ export class Tasks {
      * @param filter Search string used to filter tasks titles
      */
     async getTasks(filter: string) {
-        const queryString = 'SELECT * from tasks';
+        const queryString = `
+            SELECT
+                id,
+                title,
+                description,
+                DATE_FORMAT(created_at, "%d/%m/%Y %k:%i:%s") as created_at,
+                DATE_FORMAT(completed_at , "%d/%m/%Y %k:%i:%s") as completed_at
+            from
+                tasks`;
         const whereString = 'WHERE title LIKE ?'
         const sortQueryString = 'ORDER BY created_at ASC'
 
