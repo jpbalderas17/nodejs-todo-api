@@ -1,5 +1,5 @@
 # nodejs-todo-api
-Sample todo api using node js
+Sample todo api using node js with basic CRUD operations
 
 Create a task table in your database with the sql statement below.
 ```
